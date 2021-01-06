@@ -33,8 +33,8 @@ For more information about API credentials see [here](https://dev.bandwidth.com/
 The sample app uses the below environmental variables.
 ```java
 BANDWIDTH_ACCOUNT_ID                 // Your Bandwidth Account Id
-BANDWIDTH_USERNAME                   // Your Bandwidth API Token
-BANDWIDTH_PASSWORD                   // Your Bandwidth API Secret
+BANDWIDTH_USERNAME                   // Your Bandwidth API username 
+BANDWIDTH_PASSWORD                   // Your Bandwidth API password
 BANDWIDTH_VOICE_APPLICATION_ID       // Your Voice Application Id created in the dashboard
 PORT                                 // The port number you wish to run the sample on
 BASE_URL                             // The public base url
