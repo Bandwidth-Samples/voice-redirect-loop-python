@@ -18,7 +18,7 @@
 # Description
 This application loops indefinitely until an interruption is sent to end the call.  
 
-On an inbound call the callId is saved to an active calls set and set to loop indefinitely.  To view the list of active calls GET to the endpoint `/activeCalls` and the response will be a list of all active calls callIds.  To stop a call DELETE to the `/calls/{callId}` endpoint replaceing `{callId}` with the call that you wish to end.
+On an inbound call the callId is saved to an active calls set and set to loop indefinitely.  To view the list of active calls GET to the endpoint `/activeCalls` and the response will be a list of all active calls callIds.  To stop a call DELETE to the `/calls/{callId}` endpoint replacing `{callId}` with the call that you wish to end.
 
 
 # Bandwidth
