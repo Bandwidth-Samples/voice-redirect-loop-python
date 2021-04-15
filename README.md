@@ -31,13 +31,13 @@ For more information about API credentials see [here](https://dev.bandwidth.com/
 
 # Environmental Variables
 The sample app uses the below environmental variables.
-```java
-BW_ACCOUNT_ID                 // Your Bandwidth Account Id
-BW_USERNAME                   // Your Bandwidth API username 
-BW_PASSWORD                   // Your Bandwidth API password
-BW_VOICE_APPLICATION_ID       // Your Voice Application Id created in the dashboard
-LOCAL_PORT                                 // The port number you wish to run the sample on
-BASE_CALLBACK_URL                             // The public base url
+```sh
+BW_ACCOUNT_ID                 # Your Bandwidth Account Id
+BW_USERNAME                   # Your Bandwidth API username 
+BW_PASSWORD                   # Your Bandwidth API password
+BW_VOICE_APPLICATION_ID       # Your Voice Application Id created in the dashboard
+LOCAL_PORT                    # The port number you wish to run the sample on
+BASE_CALLBACK_URL             # The public base url
 ```
 
 # Callback URLs
