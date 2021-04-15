@@ -10,19 +10,19 @@ import sys
 import json
 
 try:
-    BANDWIDTH_USERNAME = os.environ['BANDWIDTH_USERNAME']
-    BANDWIDTH_PASSWORD = os.environ['BANDWIDTH_PASSWORD']
-    BANDWIDTH_ACCOUNT_ID = os.environ['BANDWIDTH_ACCOUNT_ID']
-    BANDWIDTH_VOICE_APPLICATION_ID = os.environ['BANDWIDTH_VOICE_APPLICATION_ID']
-    PORT = os.environ['PORT']
-    BASE_URL = os.environ['BASE_URL']
+    BW_USERNAME = os.environ['BW_USERNAME']
+    BW_PASSWORD = os.environ['BW_PASSWORD']
+    BW_ACCOUNT_ID = os.environ['BW_ACCOUNT_ID']
+    BW_VOICE_APPLICATION_ID = os.environ['BW_VOICE_APPLICATION_ID']
+    LOCAL_PORT = os.environ['LOCAL_PORT']
+    BASE_CALLBACK_URL = os.environ['BASE_CALLBACK_URL']
 except:
     print("Please set the environmental variables defined in the README")
     sys.exit(1)
 
 bandwidth_client = BandwidthClient(
-    voice_basic_auth_user_name=BANDWIDTH_USERNAME,
-    voice_basic_auth_password=BANDWIDTH_PASSWORD
+    voice_basic_auth_user_name=BW_USERNAME,
+    voice_basic_auth_password=BW_PASSWORD
 )
 
 voice_client = bandwidth_client.voice_client.client
@@ -70,8 +70,8 @@ def goodbye():
 def delete_call(call_id):
     if call_id in ACTIVE_CALLS:
         body = ApiModifyCallRequest()
-        body.redirect_url = BASE_URL + "/callbacks/goodbye"
-        voice_client.modify_call(BANDWIDTH_ACCOUNT_ID, call_id, body)
+        body.redirect_url = BASE_CALLBACK_URL + "/callbacks/goodbye"
+        voice_client.modify_call(BW_ACCOUNT_ID, call_id, body)
 
         ACTIVE_CALLS.remove(call_id)
         return 'deleted {call_id}'.format(call_id=call_id)
@@ -83,4 +83,4 @@ def get_active_calls():
     return json.dumps(ACTIVE_CALLS)
 
 if __name__ == '__main__':
-    app.run(port=PORT)
+    app.run(port=LOCAL_PORT)
