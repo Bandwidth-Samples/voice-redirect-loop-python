@@ -1,86 +1,90 @@
-from bandwidth.bandwidth_client import BandwidthClient
-from bandwidth.voice.models.api_modify_call_request import ApiModifyCallRequest
-from bandwidth.voice.bxml.response import Response
-from bandwidth.voice.bxml.verbs import *
-
-from flask import Flask, request
-
+import http
+import json
 import os
 import sys
-import json
+
+import bandwidth
+from bandwidth.models.bxml import Response as BxmlResponse
+from bandwidth.models.bxml import SpeakSentence, Hangup, Ring, Redirect
+from fastapi import FastAPI, Response
+from typing import Union
+import uvicorn
 
 try:
     BW_USERNAME = os.environ['BW_USERNAME']
     BW_PASSWORD = os.environ['BW_PASSWORD']
     BW_ACCOUNT_ID = os.environ['BW_ACCOUNT_ID']
     BW_VOICE_APPLICATION_ID = os.environ['BW_VOICE_APPLICATION_ID']
-    LOCAL_PORT = os.environ['LOCAL_PORT']
+    BW_NUMBER = os.environ['BW_NUMBER']
+    USER_NUMBER = os.environ['USER_NUMBER']
+    LOCAL_PORT = int(os.environ['LOCAL_PORT'])
     BASE_CALLBACK_URL = os.environ['BASE_CALLBACK_URL']
-except:
-    print("Please set the environmental variables defined in the README")
+except KeyError as e:
+    print(f"Please set the environmental variables defined in the README\n\n{e}")
+    sys.exit(1)
+except ValueError as e:
+    print(f"Please set the LOCAL_PORT environmental variable to an integer\n\n{e}")
     sys.exit(1)
 
-bandwidth_client = BandwidthClient(
-    voice_basic_auth_user_name=BW_USERNAME,
-    voice_basic_auth_password=BW_PASSWORD
+app = FastAPI()
+
+bandwidth_configuration = bandwidth.Configuration(
+    username=BW_USERNAME,
+    password=BW_PASSWORD
 )
 
-voice_client = bandwidth_client.voice_client.client
+bandwidth_api_client = bandwidth.ApiClient(bandwidth_configuration)
+bandwidth_calls_api_instance = bandwidth.CallsApi(bandwidth_api_client)
 
-app = Flask(__name__)
+active_calls = []
 
-ACTIVE_CALLS = []
 
-@app.route('/callbacks/inbound', methods=['POST'])
-def inbound():
-    callback_data = json.loads(request.data)
+@app.post('/callbacks/inboundCall', status_code=http.HTTPStatus.OK)
+def inbound(callback: Union[bandwidth.models.InitiateCallback, bandwidth.models.RedirectCallback]):
+    if callback.event_type == "initiate" or callback.event_type == "redirect":
+        active_calls.append(callback.call_id)
 
-    if callback_data['eventType'] == 'initiate':
-        ACTIVE_CALLS.append(callback_data['callId'])
-    
-    response = Response()
-    if callback_data['eventType'] == 'initiate' or callback_data['eventType'] == 'redirect':
-        ring = Ring(
-            duration=30
-        )
-        redirect = Redirect(
-            redirect_url='/callbacks/inbound'
-        )
+        speak_sentence = SpeakSentence(text="Redirecting call, please wait.")
+        ring = Ring(duration=30)
+        redirect = Redirect(redirect_url="/callbacks/redirectedCall")
+        bxml = BxmlResponse([speak_sentence, ring, redirect])
 
-        response.add_verb(ring)
-        response.add_verb(redirect)
-            
-    return response.to_bxml()
-
-@app.route('/callbacks/goodbye', methods=['POST'])
-def goodbye():
-    callback_data = json.loads(request.data)
-
-    response = Response()
-    if callback_data['eventType'] == 'redirect':
-        speak_sentence = SpeakSentence(
-            sentence='The call has been updated. Goodbye'
-        )
-
-        response.add_verb(speak_sentence)
-            
-    return response.to_bxml()
-
-@app.route('/calls/<call_id>', methods=['DELETE'])
-def delete_call(call_id):
-    if call_id in ACTIVE_CALLS:
-        body = ApiModifyCallRequest()
-        body.redirect_url = BASE_CALLBACK_URL + "/callbacks/goodbye"
-        voice_client.modify_call(BW_ACCOUNT_ID, call_id, body)
-
-        ACTIVE_CALLS.remove(call_id)
-        return 'deleted {call_id}'.format(call_id=call_id)
+        return Response(content=bxml.to_bxml(), media_type="application/xml")
     else:
-        return 'call not found', 404
+        speak_sentence = SpeakSentence(text="Invalid event. Hanging up")
+        hangup = Hangup()
+        bxml = BxmlResponse([speak_sentence, hangup])
 
-@app.route('/activeCalls', methods=['GET'])
+        return Response(content=bxml.to_bxml(), media_type="application/xml")
+
+
+@app.post('/callbacks/callEnded', status_code=http.HTTPStatus.OK)
+def goodbye():
+    speak_sentence = SpeakSentence(text="The call has been ended. Goodbye.")
+    hangup = Hangup()
+    bxml = BxmlResponse([speak_sentence, hangup])
+
+    return Response(content=bxml.to_bxml(), media_type="application/xml")
+
+
+@app.delete('/calls/{call_id}', status_code=http.HTTPStatus.NO_CONTENT)
+def delete_call(call_id: str):
+    if call_id in active_calls:
+        redirect = Redirect(redirect_url="/callbacks/redirectedCall")
+        bxml = BxmlResponse([redirect])
+
+        bandwidth_calls_api_instance.update_call_bxml(BW_ACCOUNT_ID, call_id, bxml.to_bxml())
+        active_calls.remove(call_id)
+        return Response(content=None)
+    else:
+        return Response(content=None, status_code=http.HTTPStatus.NOT_FOUND)
+
+
+@app.get('/activeCalls', status_code=http.HTTPStatus.OK)
 def get_active_calls():
-    return json.dumps(ACTIVE_CALLS)
+    data = json.dumps(active_calls)
+    return Response(content=data, media_type="application/json")
+
 
 if __name__ == '__main__':
-    app.run(port=LOCAL_PORT)
+    uvicorn.run("main:app", port=LOCAL_PORT, reload=True)
