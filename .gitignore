@@ -43,3 +43,7 @@ hs_err_pid*
 
 # MacOS Files
 .DS_Store
+
+# python
+__pycache__/*
+*.pyc
