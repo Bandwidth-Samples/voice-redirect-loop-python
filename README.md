@@ -1,6 +1,6 @@
 # Voice Redirect Loop
 
-<a href="https://dev.bandwidth.com/docs/voice/quickStart">
+<a href="https://dev.bandwidth.com/docs/voice/programmable-voice/quickStart/">
   <img src="./icon-voice.svg" title="Voice Quick Start Guide" alt="Voice Quick Start Guide"/>
 </a>
 
@@ -16,9 +16,9 @@
 # Description
 This sample app indefinitely redirects an inbound call to itself until an interruption is sent to end the call.
 
-In the Bandwidth Dashboard, set the Application's `Call initiated callback URL` to `<BASE_CALLBACK_URL>/callbacks/inboundCall`. This can also be done via the Dashboard API by setting `CallInitiatedCallbackUrl`. Once configured, inbound calls to your `BW_NUMBER` will be redirected every 30 seconds and ring indefinitely. The `callId` of the inbound call is saved to an `active_calls` array, which can be accessed via a GET request to the `/calls` endpoint provided by the app.
+In the Bandwidth Dashboard, set the Application's `Call initiated callback URL` to `<BASE_CALLBACK_URL>/callbacks/inbound/voice`. Also set the `Call status callback URL` to `<BASE_CALLBACK_URL>/callbacks/inbound/voice/disconnect` so calls that hang up on their own are removed from the active list. These can also be done via the Dashboard API by setting `CallInitiatedCallbackUrl` and `CallStatusCallbackUrl`. Once configured, inbound calls to a number associated with that application will be redirected every 30 seconds and ring indefinitely. The `callId` of the inbound call is saved to a list of active calls, which can be accessed via a GET request to the `/calls` endpoint provided by the app.
 
-To stop a call, make a DELETE request to the `/calls/{callId}` endpoint, replacing `{callId}` with that of the call you wish to end. This endpoint will redirect the call to the `/callbacks/callEnded` endpoint, which breaks the redirect loop and speaks a sentence to let you know the call has been ended before hanging up.
+To stop a call, make a DELETE request to the `/calls/{callId}` endpoint, replacing `{callId}` with that of the call you wish to end. This endpoint will redirect the call to the `/callbacks/inbound/voice/callEnded` endpoint, which breaks the redirect loop and speaks a sentence to let you know the call has been ended before hanging up.
 
 # Pre-Requisites
 
@@ -46,28 +46,28 @@ python main.py
 
 The sample app uses the below environmental variables.
 ```sh
-BW_ACCOUNT_ID                 # Your Bandwidth Account Id
-BW_USERNAME                   # Your Bandwidth API username
-BW_PASSWORD                   # Your Bandwidth API password
-BW_VOICE_APPLICATION_ID       # Your Voice Application Id created in the dashboard
-LOCAL_PORT                    # The port number you wish to run the sample on
-BASE_CALLBACK_URL             # The public base url
+BW_ACCOUNT_ID                        # Your Bandwidth Account Id
+BW_CLIENT_ID                         # Your Bandwidth API OAuth Client Id
+BW_CLIENT_SECRET                     # Your Bandwidth API OAuth Client Secret
+BASE_CALLBACK_URL                    # Your public base url to receive Bandwidth Webhooks. No trailing '/'
+LOCAL_PORT                           # The port number you wish to run the sample on
 ```
 
 # Callback URLs
 
-For a detailed introduction, check out our [Bandwidth Voice Callbacks](https://dev.bandwidth.com/docs/voice/quickStart#configuring-callback-urls) page.
+For a detailed introduction, check out our [Bandwidth Voice Callbacks](https://dev.bandwidth.com/docs/voice/webhooks) page.
 
 Below are the callback paths:
-* `/callbacks/inboundCall`
-* `/callbacks/callEnded`
+* `/callbacks/inbound/voice`
+* `/callbacks/inbound/voice/callEnded`
+* `/callbacks/inbound/voice/disconnect`
 
 ## Ngrok
 
 A simple way to set up a local callback URL for testing is to use the free tool [ngrok](https://ngrok.com/).  
 After you have downloaded and installed `ngrok` run the following command to open a public tunnel to your port (`$LOCAL_PORT`)
 
-```cmd
+```sh
 ngrok http $LOCAL_PORT
 ```
 
